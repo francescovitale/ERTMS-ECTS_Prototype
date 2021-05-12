@@ -10,7 +10,7 @@ public class AnomalyDetectorController {
 	public AnomalyDetectorController() {}
 	public void initializeClient() throws MqttException {
 		
-		ADMQTTClient AMC = ADMQTTClient.getInstance("tcp://127.0.0.1:1883", "adc");
+		ADMQTTClient AMC = ADMQTTClient.getInstance("tcp://192.168.1.2:1883", "adc");
 		AMC.connect();
 		AMC.initializeListener();
 	}
