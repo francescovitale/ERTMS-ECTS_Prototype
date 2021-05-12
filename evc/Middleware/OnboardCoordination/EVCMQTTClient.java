@@ -41,6 +41,7 @@ public class EVCMQTTClient {
 		Listener = new EVCMQTTListener();
 		Client.subscribe("DriverIDEVC", Listener);
 		Client.subscribe("LevelEVC", Listener);
+		Client.subscribe("LevelEVCOB", Listener);
 		Client.subscribe("TerminalEVC", Listener);
 		Client.subscribe("RBCEVC", Listener);
 		Client.subscribe("RBCEVCRBC", Listener);
@@ -52,6 +53,7 @@ public class EVCMQTTClient {
 		Client.subscribe("StartEVC", Listener);
 		Client.subscribe("StartEVCRBC", Listener);
 		Client.subscribe("AckEVC", Listener);
+		
 		
 	}
 	
@@ -75,8 +77,8 @@ public class EVCMQTTClient {
 	public String serializeMessage(Message msg) {
 		// Timestamp:Resource:Level:TrainData:Mode:TerminalData:Retry:Activity:CaseID
 		
-		String SerializedMsg = msg.getTimestamp()+":"+msg.getResource()+":"+msg.getLevel()+":"+msg.getTrainData()+":"+msg.getMode()
-		+":"+msg.getTD()+":"+msg.getRetry()+":"+msg.getActivity()+":"+msg.getCaseID();
+		String SerializedMsg = msg.getTimestamp()+"!"+msg.getResource()+"!"+msg.getLevel()+"!"+msg.getTrainData()+"!"+msg.getMode()
+		+"!"+msg.getTD()+"!"+msg.getRetry()+"!"+msg.getActivity()+"!"+msg.getCaseID();
 		
 		
 		return SerializedMsg;

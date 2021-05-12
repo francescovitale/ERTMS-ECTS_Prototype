@@ -1,21 +1,21 @@
 package ApplicationLayer.OnboardControl;
 
 public class Position {
-	int[] Coordinates;
+	float[] Coordinates;
 	boolean Valid;
 	int LastTimestamp;
 	
 	public Position() {
-		Coordinates = new int[3];
+		Coordinates = new float[2]; // lat, lon
 		Valid = true;
 		LastTimestamp = 0;
 	}
 
-	public int[] getCoordinates() {
+	public float[] getCoordinates() {
 		return Coordinates;
 	}
 
-	public void setCoordinates(int[] coordinates) {
+	public void setCoordinates(float[] coordinates) {
 		Coordinates = coordinates;
 	}
 
@@ -25,6 +25,14 @@ public class Position {
 
 	public void setValid(boolean valid) {
 		Valid = valid;
+	}
+
+	public int getLastTimestamp() {
+		return LastTimestamp;
+	}
+
+	public void setLastTimestamp(int lastTimestamp) {
+		LastTimestamp = lastTimestamp;
 	}
 	
 	

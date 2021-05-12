@@ -8,7 +8,7 @@ public class ERTMSLevel {
 	ERTMSLevel(){
 		value = 2;
 		Timestamp = 0;
-		Valid = true;
+		Valid = false;
 	}
 
 	public int getValue() {
