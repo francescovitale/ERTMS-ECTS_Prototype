@@ -1,5 +1,8 @@
 package ApplicationLayer.OnboardControl;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import ApplicationLayer.DisplayBoundary;
@@ -8,9 +11,12 @@ import Middleware.OnboardCoordination.DMIMQTTClient;
 public class MissionControl extends EventPromptControl {
 
 	private volatile static MissionControl MC = null;
+	boolean timedOut;
 	
 	private MissionControl() throws MqttException {
+		timedOut = false;
 	}
+	// This class is a singleton.
 	public static MissionControl getInstance() throws MqttException {
 		if(MC==null) {
 			synchronized(MissionControl.class) {
@@ -21,27 +27,71 @@ public class MissionControl extends EventPromptControl {
 		}
 		return MC;
 	}
-	
+	// This method manages the initialization of the DMI.
 	public void initializeSOM() throws Exception {
-		
 		try {
-			DMIMQTTClient DMC = DMIMQTTClient.getInstance("tcp://127.0.0.1:1883", "dmi");
+			DMIMQTTClient DMC = DMIMQTTClient.getInstance("tcp://192.168.1.2:1883", "dmi");
 			DMC.connect();
 			DMC.initializeListener();
-			sendEvent("StartOfMissionEvent",DMC);
-			
-			
 		} catch (MqttException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	// This method manages the validation of the level
+	public void validateLevel() throws Exception {
+		DMIMQTTClient DMC = DMIMQTTClient.getInstance(null, null);
+		DMC.publishString("LevelEVC", DisplayBoundary.getInstance().getCaseID().toString());
+		System.out.println("MC about to go to sleep..");
+		timedOut = true;
+		synchronized(this) {
+			this.wait(25000);
+		}
+		// If it doesn't get woken up, it assumes there's a network problem between the DMI and the EVC.
+		
+		// A check should be done on the timeout. If the check is positive, then the driver is provided with
+		// an error message.
+		// Code to execute after the thread wakes up.
+		
+		System.out.println("MC WOKE UP");
+		if(timedOut == true) {
+			timedOut = false; // Reset the flag
+			throw new Exception();
+		}
+
 		
 	}
-	public void validateLevel() throws MqttException, InterruptedException {
-		DMIMQTTClient DMC = DMIMQTTClient.getInstance("tcp://127.0.0.1:1883", "dmi");
-		DMC.publishString("LevelEVC", DisplayBoundary.getCaseID().toString());
+	// This method manages the contact with the RBC through the EVC
+	public void contactRBCControl(String insertedOption) throws Exception {
+		DMIMQTTClient DMC = DMIMQTTClient.getInstance(null, null);
+		DMC.publishString("RBCEVC", insertedOption + ":" + DisplayBoundary.getInstance().getCaseID().toString());
+		System.out.println("MC about to go to sleep..");
+		timedOut = true;
 		synchronized(this) {
-			this.wait();
+			this.wait(25000);
+		}
+		// If it doesn't get woken up, it assumes there's a network problem between the DMI and the EVC.
+		
+		// A check should be done on the timeout. If the check is positive, then the driver is provided with
+		// an error message.
+		// Code to execute after the thread wakes up.
+		
+		System.out.println("MC WOKE UP");
+		
+		if(timedOut == true) {
+			timedOut = false; // Reset the flag
+			throw new Exception();
+		}
+
+		
+	}
+	// This method manages the 'RBC Routine', which is the routine executed by the EVC when the connection is made with the RBC, and the position and acceptance of the train is managed
+	public void RBCRoutine() throws Exception {
+		DMIMQTTClient DMC = DMIMQTTClient.getInstance(null, null);
+		DMC.publishString("RBCRoutineEVC", DisplayBoundary.getInstance().getCaseID().toString());
+		timedOut = true;
+		synchronized(this) {
+			this.wait(25000);
 		}
 		// If it doesn't get woken up, it assumes there's a network problem between the DMI and the EVC.
 		
@@ -51,12 +101,20 @@ public class MissionControl extends EventPromptControl {
 		// Code to execute after the thread wakes up.
 		
 		System.out.println("MC WOKE UP");
+		
+		if(timedOut == true) {
+			timedOut = false;
+			
+			throw new Exception();
+		}
 	}
-	public void contactRBCControl() throws MqttException, InterruptedException {
-		DMIMQTTClient DMC = DMIMQTTClient.getInstance("tcp://127.0.0.1:1883", "dmi");
-		DMC.publishString("RBCEVC", DisplayBoundary.getCaseID().toString());
+	public void startControl() throws Exception {
+		DMIMQTTClient DMC = DMIMQTTClient.getInstance(null, null);
+		sendEvent("som_selstart_dmi_1", DMC);
+		DMC.publishString("StartEVC", DisplayBoundary.getInstance().getCaseID().toString());
+		timedOut = true;
 		synchronized(this) {
-			this.wait();
+			this.wait(25000);
 		}
 		// If it doesn't get woken up, it assumes there's a network problem between the DMI and the EVC.
 		
@@ -66,48 +124,26 @@ public class MissionControl extends EventPromptControl {
 		// Code to execute after the thread wakes up.
 		
 		System.out.println("MC WOKE UP");
-	}
-	public void RBCRoutine() throws MqttException, InterruptedException {
-		DMIMQTTClient DMC = DMIMQTTClient.getInstance("tcp://127.0.0.1:1883", "dmi");
-		DMC.publishString("RBCRoutineEVC", DisplayBoundary.getCaseID().toString());
-		synchronized(this) {
-			this.wait();
+		if(timedOut == true) {
+			timedOut = false;
+			sendEvent("som_end",DMC); // The procedure is cut.
 		}
-		// If it doesn't get woken up, it assumes there's a network problem between the DMI and the EVC.
-		
-		// A check should be done on the timeout. If the check is positive, then the driver is provided with
-		// an error message.
-
-		// Code to execute after the thread wakes up.
-		
-		System.out.println("MC WOKE UP");
-	}
-	public void giveUpControl() {}
-	public void ackTrainDataControl() {}
-	public void startControl() throws MqttException, InterruptedException {
-		DMIMQTTClient DMC = DMIMQTTClient.getInstance("tcp://127.0.0.1:1883", "dmi");
-		Message M = new Message(12,"dmi",0,0,"","",false,"som_selstart_dmi_1",DisplayBoundary.getCaseID());
-		DMC.publishMessage("StartOfMissionEvent", M);
-		DMC.publishString("StartEVC", DisplayBoundary.getCaseID().toString());
-		synchronized(this) {
-			this.wait();
+		else {
+			if(DisplayBoundary.getInstance().getObtainedLevel()>=2) {
+				sendEvent("som_awaitack_dmi_1",DMC);
+			}
+			else {
+				sendEvent("som_awaitack_dmi_2", DMC);
+			}
 		}
-		// If it doesn't get woken up, it assumes there's a network problem between the DMI and the EVC.
-		
-		// A check should be done on the timeout. If the check is positive, then the driver is provided with
-		// an error message.
-
-		// Code to execute after the thread wakes up.
-		
-		System.out.println("MC WOKE UP");
-		M = new Message(17,"dmi",0,0,"","",false,"som_awaitack_dmi_1",DisplayBoundary.getCaseID());
-		DMC.publishMessage("StartOfMissionEvent", M);
 	}
-	public void ackControl() throws MqttException, InterruptedException {
-		DMIMQTTClient DMC = DMIMQTTClient.getInstance("tcp://127.0.0.1:1883", "dmi");
-		DMC.publishString("AckEVC", String.valueOf(DisplayBoundary.getCaseID()));
+	public void ackControl() throws Exception {
+		DMIMQTTClient DMC = DMIMQTTClient.getInstance(null, null);
+		DMC.publishString("AckEVC", String.valueOf(DisplayBoundary.getInstance().getCaseID()));
+		System.out.println("MC About to go to sleep..");
+		timedOut = true;
 		synchronized(this) {
-			this.wait();
+			this.wait(25000);
 		}
 		// If it doesn't get woken up, it assumes there's a network problem between the DMI and the EVC.
 		
@@ -116,20 +152,24 @@ public class MissionControl extends EventPromptControl {
 
 		// Code to execute after the thread wakes up.
 		System.out.println("MC WOKE UP");
+		if(timedOut == true) {
+			timedOut = false;
+			sendEvent("som_end",DMC); // The procedure is cut.
+		}
 	}
 	
 	
 	@Override
-	void sendEvent(String op,DMIMQTTClient DMC) throws Exception {
-		switch(op) {
-		case "StartOfMissionEvent":
-			Message M = new Message(0,"dmi",0,0,"","",false,"som_start",DisplayBoundary.getCaseID());
-			DMC.publishMessage("StartOfMissionEvent", M);
-			break;
-		default: throw new Exception();
-		
-		}
-		
+	public void sendEvent(String activity,DMIMQTTClient DMC) throws Exception {
+		String TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+		Message M = new Message(TS,"dmi",0,0,"","",false,activity,DisplayBoundary.getInstance().getCaseID());
+		DMC.publishMessage("StartOfMissionEvent", M);
+	}
+	public boolean isTimedOut() {
+		return timedOut;
+	}
+	public void setTimedOut(boolean timedOut) {
+		this.timedOut = timedOut;
 	}
 
 }

@@ -30,6 +30,7 @@ public class DMIMQTTClient {
 		return DMC;
 	}
 	
+	
 	public void connect() throws MqttSecurityException, MqttException {
 		MqttConnectOptions connOpts = new MqttConnectOptions();
         connOpts.setCleanSession(true);
@@ -71,8 +72,8 @@ public class DMIMQTTClient {
 	public String serializeMessage(Message msg) {
 		// Timestamp:Resource:Level:TrainData:Mode:TerminalData:Retry:Activity:CaseID
 		
-		String SerializedMsg = msg.getTimestamp()+":"+msg.getResource()+":"+msg.getLevel()+":"+msg.getTrainData()+":"+msg.getMode()
-		+":"+msg.getTD()+":"+msg.getRetry()+":"+msg.getActivity()+":"+msg.getCaseID();
+		String SerializedMsg = msg.getTimestamp()+"!"+msg.getResource()+"!"+msg.getLevel()+"!"+msg.getTrainData()+"!"+msg.getMode()
+		+"!"+msg.getTD()+"!"+msg.getRetry()+"!"+msg.getActivity()+"!"+msg.getCaseID();
 		
 		
 		return SerializedMsg;
