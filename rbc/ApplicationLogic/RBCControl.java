@@ -1,8 +1,12 @@
 package ApplicationLogic;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
+import Middleware.RBCHTTPClient;
 import Middleware.RBCMQTTClient;
 
 
@@ -11,6 +15,7 @@ import Middleware.RBCMQTTClient;
 public class RBCControl{
 
 	RBCMQTTClient RMC;
+	RBCHTTPClient RHC;
 	private volatile static RBCControl RC = null;
 	Position P;
 	boolean Accepted = false;
@@ -30,67 +35,78 @@ public class RBCControl{
 		}
 		return RC;
 	}
-	
 	public void initializeClient() throws MqttException {
-		RMC = RBCMQTTClient.getInstance("tcp://127.0.0.1:1883", "rbc");
+		RMC = RBCMQTTClient.getInstance("tcp://192.168.1.2:1883", "rbc");
+		RHC = RBCHTTPClient.getInstance();
 		RMC.connect();
 		RMC.initializeListener();
 	}
-	
 	public void openConnection() throws MqttPersistenceException, MqttException {
 		Open = true;
 		RMC.publishString("RBCEVCRBC", "");
 	}
-	public void elaboratePosition(int CaseID) throws MqttException {
+	public void elaboratePosition(int CaseID) throws Exception {
 		// If the elaborated position (which is not yet to be sent) is valid, do one thing, otherwise do the other.
 		// We assume for now the position (not) sent by the EVC is valid.
-		if(P.isValid()) {
+		if(P.isValid()) { // For any reason, this block may not be executed.. Big anomaly.
 			// Store the position..
-			RMC = RBCMQTTClient.getInstance("tcp://127.0.0.1:1883", "rbc");
-			Message M = new Message(6,"rbc",0,0,"","",true,"som_storepos_rbc_1",CaseID);
-			RMC.publishMessage("StartOfMissionEvent", M);
+			RMC = RBCMQTTClient.getInstance(null, null);
+			
+			sendEvent("som_storepos_rbc_1",RHC,CaseID);
 			// Store the accepted flag..
 			Accepted = true;
-			M = new Message(7,"rbc",0,0,"","",true,"som_storevalacc_rbc_1",CaseID);
-			RMC.publishMessage("StartOfMissionEvent", M);
-			RMC.publishString("RBCRoutineEVCRBC", "");
+			sendEvent("som_storevalacc_rbc_1",RHC, CaseID);
+			
 		}
 		else {
 			// To implement..
 		}
+		RMC.publishString("RBCRoutineEVCRBC", String.valueOf(Accepted));
 	}
-	public void checkSession() {
+	public void manageMA(int CaseID) throws Exception {
+		RMC = RBCMQTTClient.getInstance(null, null);
+		boolean freeRoute;
+		
+		freeRoute = checkTrainRoute(CaseID);
+		
+		if(freeRoute && checkPosition(CaseID)) {
+			sendEvent("som_grantFS_rbc_1",RHC, CaseID);
+			RMC.publishString("StartEVCRBC", "FS");}
+		else if(freeRoute & !checkPosition(CaseID)) {
+			sendEvent("som_grantOS_rbc_1",RHC, CaseID);
+			RMC.publishString("StartEVCRBC", "OS");
+		}
+		else {
+			sendEvent("som_grantSR_rbc_1",RHC, CaseID);
+			RMC.publishString("StartEVCRBC", "SR");
+		}
 		
 	}
 	
-	public void manageMA(int CaseID) throws MqttException {
-		// Check if the position is valid..
-		
-		// Check the train route.. Should contact the IXL.
-		
-		// Only option: the position is valid and the train route is free. FS is granted.
-		
-		RMC = RBCMQTTClient.getInstance("tcp://127.0.0.1:1883", "rbc");
-		Message M = new Message(14,"rbc",0,0,"","",true,"som_checktrainroute_rbc_1",CaseID);
-		RMC.publishMessage("StartOfMissionEvent", M);
-		M = new Message(15,"rbc",0,0,"","",true,"som_checkval_rbc_1",CaseID);
-		RMC.publishMessage("StartOfMissionEvent", M);
-		M = new Message(16,"rbc",0,0,"","",true,"som_grantFS_rbc_1",CaseID);
-		RMC.publishMessage("StartOfMissionEvent", M);
-		
-		RMC.publishString("StartEVCRBC", "FS");
-		
+	private boolean checkTrainRoute(int CaseID) throws Exception {
+		sendEvent("som_checktrainroute_rbc_1",RHC, CaseID);
+		return true;
 	}
-
-	public static void main(String[] args) throws MqttException {
-		RBCControl.getInstance().initializeClient();
-
+	private boolean checkPosition(int CaseID) throws Exception {
+		sendEvent("som_checkval_rbc_1",RHC, CaseID);
+		return P.isValid();
 	}
 	public boolean isOpen() {
 		return Open;
 	}
 	public void setOpen(boolean open) {
 		Open = open;
+	}
+	public void setValidPos(boolean flag) {
+		P.setValid(flag);
+	}
+	public void sendEvent(String activity,RBCHTTPClient RHC, int CaseID) throws Exception {
+		String TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+		Message M = new Message(TS,"rbc",0,0,"","",false,activity,CaseID);
+		RHC.postEvent(M);
+	}
+	public static void main(String[] args) throws MqttException {
+		RBCControl.getInstance().initializeClient();
 	}
 	
 

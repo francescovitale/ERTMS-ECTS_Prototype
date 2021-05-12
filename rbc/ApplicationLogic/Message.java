@@ -1,7 +1,7 @@
 package ApplicationLogic;
 
 public class Message {
-	int Timestamp;
+	String Timestamp;
 	String Resource;
 	String Activity;
 	int Level;
@@ -11,7 +11,7 @@ public class Message {
 	boolean Retry;
 	int CaseID;
 	
-	public Message(int T, String R, int L, int TData, String M, String TermD, boolean Ret, String A, int CID) {
+	public Message(String T, String R, int L, int TData, String M, String TermD, boolean Ret, String A, int CID) {
 		Timestamp = T;
 		Resource = R;
 		Activity = A;
@@ -23,11 +23,11 @@ public class Message {
 		CaseID = CID;
 	}
 
-	public int getTimestamp() {
+	public String getTimestamp() {
 		return Timestamp;
 	}
 
-	public void setTimestamp(int timestamp) {
+	public void setTimestamp(String timestamp) {
 		Timestamp = timestamp;
 	}
 
