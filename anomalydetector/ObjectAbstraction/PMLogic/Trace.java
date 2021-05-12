@@ -3,17 +3,37 @@ import java.util.ArrayList;
 
 public class Trace {
 private
+	int ID;
 	ArrayList<ActivityInstance> AI;
 	Description CD;
 public
-	Trace() {}
+	Trace() {
+		ID = -1;
+		AI = new ArrayList<ActivityInstance>();
+		CD = null;
+	}
 
 	Trace(ArrayList<ActivityInstance> AI_in) {
+		ID = -1;
 		AI = AI_in;
+		CD = null;
+	}
+	
+	public Trace(int ID_in){
+		ID = ID_in;
+		AI = new ArrayList<ActivityInstance>();
+		CD = null;
+	}
+	public Trace(int ID_in, ArrayList<ActivityInstance> AI_in, Description D){
+		ID = ID_in;
+		AI = AI_in;
+		CD = D;
 	}
 
 	Trace(Trace T){
+		ID = T.getID();
 		AI = new ArrayList<ActivityInstance>(T.getAI());
+		CD = T.getCD();
 	}
 
 	public ArrayList<ActivityInstance> getAI() {
@@ -46,6 +66,22 @@ public
 		return equal;
 						
 		
+	}
+
+	public int getID() {
+		return ID;
+	}
+
+	public void setID(int iD) {
+		ID = iD;
+	}
+
+	public Description getCD() {
+		return CD;
+	}
+
+	public void setCD(Description cD) {
+		CD = cD;
 	}
 
 	

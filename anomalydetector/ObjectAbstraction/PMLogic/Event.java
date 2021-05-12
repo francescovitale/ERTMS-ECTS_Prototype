@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 public class Event {
 private
 	int ID;
-	int T;
+	long T;
 	String Resource;
 	ProcessInstance PI;
 	ActivityInstance AI;
@@ -17,7 +17,7 @@ public
 		AI = null;
 	}
 
-	public Event(int ID_in, int T_in, String Resource_in, ProcessInstance P_in, ActivityInstance A_in) {
+	public Event(int ID_in, long T_in, String Resource_in, ProcessInstance P_in, ActivityInstance A_in) {
 		ID = ID_in;
 		T = T_in;
 		Resource = Resource_in;
@@ -38,10 +38,10 @@ public int getID() {
 public void setID(int iD) {
 	ID = iD;
 }
-public int getT() {
+public long getT() {
 	return T;
 }
-public void setT(int i) {
+public void setT(long i) {
 	T = i;
 }
 public String getResource() {

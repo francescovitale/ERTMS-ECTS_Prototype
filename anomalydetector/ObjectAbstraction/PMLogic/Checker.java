@@ -19,6 +19,7 @@ private
 	
 public
 	Checker(){}
+	// This method fetches the contents of the database and place them in the private data structures
 	void initializeDBDataStructures(DBFacade DBF) throws SQLException {
 		P = DBF.getProcessList();
 		A = DBF.getActivityList(P);
@@ -30,127 +31,158 @@ public
 		System.out.println();
 		
 	}
+	
+	// This method fetches the contents in the files that contain what's necessary for applying the Conformance Checking algorithm
 	void initializeFSDataStructures(FileSystemFacade FSF, ProcessModel PM) throws FileNotFoundException, IOException {
 		PN = FSF.getPetriNet(PM, A);
 		BPMN_model = FSF.getBPMN(PM, A);
 	}
+	
+	// This method performs the Conformance Checking through use of the Token Replay technique.
 	public ArrayList<Trace> onlineConformanceChecking() throws FileNotFoundException, IOException, SQLException{
 		DBFacade DBF = new DBFacade();
 		
+		// The private data structures stored in the Database are fetched
 		initializeDBDataStructures(DBF);
 		
+		// What's needed throughout the algorithm is here instantiated
+		ArrayList<Trace> ReturnedTraces = new ArrayList<Trace>();
+		ArrayList<Description> CDL = new ArrayList<Description>();
+		ArrayList<ProcessModel> found_PM = new ArrayList<ProcessModel>();
+			
+		/*for(int i=0; i<E.size(); i++)
+			System.out.println(E.get(i).getAI().getName());*/
 		
-		if(true) {
-			return null;
+		// In this cycle only one Process Model is considered per group of Process Instances
+		for(int i = 0; i<PI.size(); i++) {
+			boolean found = false;
+			int k = 0;
+			do {
+				if(found_PM.size() != 0 && found_PM.get(k).getName().equals(PI.get(i).getP().getName()))
+					found = true;
+				k++;
+			}while(found == false && k<found_PM.size());
+			if(found == false)
+				found_PM.add(PI.get(i).getP());
 		}
-		else {
-			ArrayList<Trace> ReturnedTraces = new ArrayList<Trace>();
-			ArrayList<Description> CDL = new ArrayList<Description>();
+		
+		// This is the main cycle. It cycles over all the Process Models found in the Database.
+		for(int i = 0; i<found_PM.size(); i++) {
+			FileSystemFacade FSF = FileSystemFacade.getInstance("C:\\Users\\aceep\\OneDrive\\Desktop\\Files\\StartOfMission", "start_of_mission");
+			// The private data structures stored in the files are fetched
+			initializeFSDataStructures(FSF,found_PM.get(i));
+			/*ArrayList<String> P = PN.getPlaces();
+			PN.updateMarking(P, null);
+			for(int j=0;j<PN.getMarking().size();j++) {
+				System.out.println(PN.getMarking().get(P.get(j)));
+			}*/
 			
+			// This ArrayList of ArrayLists will contain the base traces and the extended traces
+			ArrayList<ArrayList<Trace>> ObtainedTraces;
+				
+			// The last transition must be taken into account.
+			ObtainedTraces = buildTraces(); // the 0 position contains the normal traces and the 1 position contains the modified traces
 			
+			for(int j=0; j<PN.getPlaces().size(); j++)
+				System.out.print(PN.getPlaces().get(j)+ " ");
+			System.out.println();
+			for(int j=0; j<PN.getTransitions().size(); j++)
+				System.out.print(PN.getTransitions().get(j).getName()+ " ");
+			System.out.println();
 			
-			/*for(int i=0; i<E.size(); i++)
-				System.out.println(E.get(i).getAI().getName());*/
-			ArrayList<ProcessModel> found_PM = new ArrayList<ProcessModel>();
-			for(int i = 0; i<PI.size(); i++) {
-				boolean found = false;
-				int k = 0;
-				do {
-					if(found_PM.size() != 0 && found_PM.get(k).getName().equals(PI.get(i).getP().getName()))
-						found = true;
-					k++;
-				}while(found == false && k<found_PM.size());
-				if(found == false)
-					found_PM.add(PI.get(i).getP());
+			for(int j=0; j<ObtainedTraces.get(0).size(); j++) {
+				for(int k=0; k<ObtainedTraces.get(0).get(j).getAI().size(); k++) {
+					System.out.print(ObtainedTraces.get(0).get(j).getAI().get(k).getA().getName()+" ");
+				}
+				System.out.println();
 			}
-			
-			for(int i = 0; i<found_PM.size(); i++) {
-				FileSystemFacade FSF = FileSystemFacade.getInstance("C:\\Users\\aceep\\OneDrive\\Desktop\\Files\\StartOfMission", "start_of_mission");
-				initializeFSDataStructures(FSF,found_PM.get(i));
-				/*ArrayList<String> P = PN.getPlaces();
-				PN.updateMarking(P, null);
-				for(int j=0;j<PN.getMarking().size();j++) {
-					System.out.println(PN.getMarking().get(P.get(j)));
-				}*/
-				
-				ArrayList<ArrayList<Trace>> ObtainedTraces;
-				
-				// The last transition must be taken into account.
-				ObtainedTraces = buildTraces(); // the 0 position contains the normal traces and the 1 position contains the modified traces
-				
-				for(int j=0; j<PN.getPlaces().size(); j++)
-					System.out.print(PN.getPlaces().get(j)+ " ");
-				System.out.println();
-				for(int j=0; j<PN.getTransitions().size(); j++)
-					System.out.print(PN.getTransitions().get(j).getName()+ " ");
-				System.out.println();
-				
-				for(int j=0; j<ObtainedTraces.get(0).size(); j++) {
-					for(int k=0; k<ObtainedTraces.get(0).get(j).getAI().size(); k++) {
-						System.out.print(ObtainedTraces.get(0).get(j).getAI().get(k).getA().getName()+" ");
-					}
-					System.out.println();
+			System.out.println();
+			for(int j=0; j<ObtainedTraces.get(1).size(); j++) {
+				for(int k=0; k<ObtainedTraces.get(1).get(j).getAI().size(); k++) {
+					System.out.print(ObtainedTraces.get(1).get(j).getAI().get(k).getA().getName()+" ");
 				}
 				System.out.println();
-				for(int j=0; j<ObtainedTraces.get(1).size(); j++) {
-					for(int k=0; k<ObtainedTraces.get(1).get(j).getAI().size(); k++) {
-						System.out.print(ObtainedTraces.get(1).get(j).getAI().get(k).getA().getName()+" ");
-					}
-					System.out.println();
-				}
-				System.out.println();
-				
-				CDL.add(tokenReplay(ObtainedTraces.get(1),ObtainedTraces.get(0)));
-				
-				System.out.println("Fitness: " + CDL.get(i).getFitness());
-				for(int j=0;j<CDL.get(i).getT().size();j++) {
-					System.out.println("Anomalous trace " + j + ": ");
-					for(int k=0; k<CDL.get(i).getT().get(j).getAI().size(); k++)
-						System.out.print(CDL.get(i).getT().get(j).getAI().get(k).getA().getName()+ " ");
-					System.out.println();
-				}
 			}
-			for(int i=0; i<CDL.size(); i++)
-				for(int j=0; j<CDL.get(i).getT().size(); j++) {
-					ReturnedTraces.add(CDL.get(i).getT().get(j));
-					
-				}
-			/*for(int i=0; i<ReturnedTraces.size(); i++)
-				for(int j=0; j<ReturnedTraces.get(i).getAI().size(); j++)
-					System.out.println(ReturnedTraces.get(i).getAI().get(j));*/
-			return ReturnedTraces;
+			System.out.println();
+			
+			// To the ArrayList of Descriptions the results of the tokenReplay() method are considered.
+			// The tokenReplay method applies the Token Replay technique and infers a fitness parameter.
+			CDL.add(tokenReplay(ObtainedTraces.get(1),ObtainedTraces.get(0)));
+			
+			System.out.println("Fitness: " + CDL.get(i).getFitness());
+			for(int j=0;j<CDL.get(i).getT().size();j++) {
+				System.out.println("Anomalous trace " + j + ": ");
+				for(int k=0; k<CDL.get(i).getT().get(j).getAI().size(); k++)
+					System.out.print(CDL.get(i).getT().get(j).getAI().get(k).getA().getName()+ " ");
+				System.out.println();
+				int[] ActID = new int[CDL.get(i).getT().get(j).getAI().size()];
+				for(int k=0; k<ActID.length; k++)
+					ActID[k] = CDL.get(i).getT().get(j).getAI().get(k).getID();
+				DBF.insertAnomalousTrace(ActID, CDL.get(i).getFitness());
+				
+			}
+			int[] ActID;
+			int CaseID;
+			for(int j=0; j<ObtainedTraces.get(0).size(); j++) {
+				ActID = new int[ObtainedTraces.get(0).get(j).getAI().size()];
+				CaseID = ObtainedTraces.get(0).get(j).getAI().get(j).getPI().getCaseID();
+				for(int k=0; k<ObtainedTraces.get(0).get(j).getAI().size(); k++)
+					ActID[k] = ObtainedTraces.get(0).get(j).getAI().get(k).getID();
+				DBF.deleteEvent(ActID, CaseID);
+				System.out.println("deleting");
+			}
 		}
+		for(int i=0; i<CDL.size(); i++)
+			for(int j=0; j<CDL.get(i).getT().size(); j++) {
+				ReturnedTraces.add(CDL.get(i).getT().get(j));
+				
+			}
+		/*for(int i=0; i<ReturnedTraces.size(); i++)
+			for(int j=0; j<ReturnedTraces.get(i).getAI().size(); j++)
+				System.out.println(ReturnedTraces.get(i).getAI().get(j));*/
+		DBF.closeConnection();
+		return ReturnedTraces;
 	}
+	
+	// This method performs the so-called Token Replay technique.
 	Description tokenReplay(ArrayList<Trace> ProcessModifiedTraces, ArrayList<Trace> ProcessTraces) {
 		/*for(int i=0; i<ProcessTraces.size(); i++) {
 			for(int j=0;j<ProcessTraces.get(i).getAI().size(); j++)
 				System.out.print(ProcessTraces.get(i).getAI().get(j).getName() + " ");
 		}
 		System.out.println();*/
+		
+		// The data structures used are here defined. The ReplayParameters variable is initialized to
+		// hold the p, c, m and r variables. However, one should note that there are two of these variables:
+		// 		1) RPGlobal considers *all* the p,c,m and r calculated for each trace
+		// 		2) RPLocal considers the p,c,m and r calculated for the single trace.
 		Description DL = new Description();
 		float Fitness = (float) 0.0;
 		ReplayParameters RPGlobal = new ReplayParameters();
+		// The Token Replay techniques is applied for each trace.
 		for(int i=0; i<ProcessModifiedTraces.size(); i++) {
 			ReplayParameters RPLocal = new ReplayParameters(1,0,0,0,false);
 			boolean end = false;
+			// The Token Replay technique fires each activity found in the trace.
 			for(int j=0; j<ProcessModifiedTraces.get(i).getAI().size() && !end;j++) {
 				
 				Activity AToFire = null;
+				// The activity to fire in the Petri Net is recovered from the trace.
 				for(int k=0; k<A.size(); k++)
 					if(A.get(k).getName().equals(ProcessModifiedTraces.get(i).getAI().get(j).getA().getName()))
 						AToFire = A.get(k);
+				// The activity is fired on the Petri Net. The Petri Net itself updates the 
 				RPLocal = PN.fire(AToFire, RPLocal);
 				
 				System.out.println("Iteration " + j + " for activity " + AToFire.getName() + ": Local p: "+RPLocal.getP() + " Local c: "+RPLocal.getC() + " Local m: "+RPLocal.getM() + "Local r: "+RPLocal.getR());
 				
-				end = RPLocal.isEnd();
+				end = RPLocal.isEnd(); // Check if the Token Replay has ended for the current trace
 			}
-			
+			// The anomalous traces are here considered and added to the Description variable that was defined before.
 			if(RPLocal.getM()!=0 || RPLocal.getR()!= 0) {
 				boolean found = false;
 				int k = 0;
 				do {
-					
 					if(DL.getT().size() != 0 && DL.getT().get(k).equals(ProcessModifiedTraces.get(i))) {
 						found = true;
 					}
@@ -159,18 +191,23 @@ public
 				if(found == false)
 					DL.getT().add(ProcessTraces.get(i));
 			}
+			// RPGlobal is updated.
 			RPGlobal.setC(RPGlobal.getC()+RPLocal.getC());
 			RPGlobal.setP(RPGlobal.getP()+RPLocal.getP());
 			RPGlobal.setM(RPGlobal.getM()+RPLocal.getM());
 			RPGlobal.setR(RPGlobal.getR()+RPLocal.getR());
+			// The Petri Net is re-initialized.
 			PN.initializeMarking();
 		}
+		// The Fitness parameter is updated.
 		Fitness = (float)1/2 * (1-((float)RPGlobal.getM()/(float)RPGlobal.getC())) + (float)1/2 * (1-((float)RPGlobal.getR()/(float)RPGlobal.getP()));
 		
 		DL.setFitness(Fitness);
 		
 		return DL;
 	}
+	
+	// This method build the Base Traces and the Extended Traces.
 	ArrayList<ArrayList<Trace>> buildTraces() {
 		ArrayList<Trace> BuiltTraces = new ArrayList<Trace>();
 		ArrayList<Trace> ModifiedBuiltTraces = new ArrayList<Trace>();
@@ -179,37 +216,46 @@ public
 		
 		for(int i=0; i<PI.size(); i++)
 		{
+			// The trace, for each Process Instance, is obtained through ordering the events using the 
+			// orderEvents() method
 			Trace ExtractedTrace = orderEvents(PI.get(i).getCaseID());
 			
+			// The trace is checked for completeness through the isComplete() method.
 			if(isComplete(ExtractedTrace)) {
 				BuiltTraces.add(ExtractedTrace);
+				// The Modified Trace is here built
 				Trace ExtractedModifiedTrace = modifyTrace(ExtractedTrace, PI.get(i));
-				
+				// The Modified Trace is added to the list of traces.
 				ModifiedBuiltTraces.add(ExtractedModifiedTrace);
 				}
 		}
-		
-		
-		
+		// In the first position of this ArrayList is the ArrayList of Base Traces. In the second position
+		// of this ArrayList is the ArrayList of the Modified Base Traces.
 		ObtainedTraces.add(BuiltTraces);
 		ObtainedTraces.add(ModifiedBuiltTraces);
 		return ObtainedTraces;
 		
 	}
 
+	// Checks for the trace completeness.
 	boolean isComplete(Trace T) {
 		boolean complete = false;
-		ActivityInstance LastActivity = T.getAI().get(T.getAI().size()-1);
-		if(LastActivity.getA().getName().equals(PN.getTransitions().get(PN.getTransitions().size()-1).getName())) {
-			complete = true;
+		if(T.getAI().size() != 0) {
+			ActivityInstance LastActivity = T.getAI().get(T.getAI().size()-1);
+			if(LastActivity.getA().getName().equals(PN.getTransitions().get(PN.getTransitions().size()-1).getName())) {
+				complete = true;
+			}
 		}
 		return complete;
 		
 	}
 	
+	// Orders the events for a particular Process Instance
 	Trace orderEvents(int CaseID) {
 		Trace BuiltTrace = new Trace();
+		// This will be the Event List to order.
 		ArrayList<Event> EventListToOrder = new ArrayList<Event>();
+		// A copy of the Event List is made. This is to not lose the references for the original list.
 		ArrayList<Event> TempEvent = new ArrayList<Event>(E);
 		boolean found = false;
 		
@@ -217,10 +263,13 @@ public
 			System.out.print(E.get(i).getAI().getA().getName() + " ");
 		System.out.println();
 		
+		
 		do {
 			
 			found = false;
 			
+			// The copy of the Event List is cycled through: if the CaseID matches with what's expected
+			// then the event is added to the Event List to order and is removed from the copy (this is why the copy was made)
 			for(int i = 0; i<TempEvent.size(); i++)
 			{
 				if(TempEvent.get(i).getPI().getCaseID() == CaseID) {
@@ -235,12 +284,17 @@ public
 		for(int i=0;i<EventListToOrder.size(); i++)
 			System.out.print(EventListToOrder.get(i).getAI().getA().getName() + " ");
 		System.out.println();
+		
+		// Through the sort method, which simply implements an Insertion Sort, the events are sorted by their timestamp
 		EventListToOrder = sort(EventListToOrder);
 		
+		// An ArrayList of ActivityInstance is made and built with the activity instances recovered from
+		// the Event List to order.
 		ArrayList<ActivityInstance> OrderedAIArray = new ArrayList<ActivityInstance>();
 		for(int i=0; i<EventListToOrder.size(); i++) {
 			OrderedAIArray.add(EventListToOrder.get(i).getAI());
 		}
+		// The Built Trace is populated with the recovered Activity Instance ArrayList.
 		BuiltTrace.setAI(OrderedAIArray);
 		for(int i = 0; i<BuiltTrace.getAI().size(); i++)
 			System.out.print(BuiltTrace.getAI().get(i).getA().getName()+ " ");
@@ -248,10 +302,14 @@ public
 		
 		return BuiltTrace;
 	}
+	
+	// This is the core method that modifies the trace by adding the artificial events.
 	Trace modifyTrace(Trace BaseTrace, ProcessInstance PIToAssign) {
 		Trace ModifiedTrace = new Trace(BaseTrace);
+		// The count variable is used to manage multiple instances of the same activity (this happens for loops)
 		int count;
 		
+		// The Split Relations and Merge Relations (Join Relations) are retrieved from the BPMN model previously fetched
 		ArrayList<SplitRelation> RetrievedSR = BPMN_model.getSR();
 		ArrayList<MergeRelation> RetrievedMR = BPMN_model.getMR();
 		for(int i=0; i<RetrievedSR.size(); i++)
@@ -263,50 +321,57 @@ public
 				System.out.print(RetrievedSR.get(i).getSuccessiveActivities().get(j).getName()+" ");
 			System.out.println();
 		}
+		// The skip variable is used to manage multiple instances of the same activity (this happens for loops)
 		boolean skip = false;
 		for(int i=0; i<RetrievedSR.size(); i++) {
-			// every iteration considers a single split relation, which has a single precedent activity and multiple possible successive activities
+			// Every iteration considers a single split relation, which has a single precedent activity and multiple possible successive activities
 			Activity PrecedentActivity = RetrievedSR.get(i).getPrecedentActivity();
 			ArrayList<Activity> SuccessiveActivities = RetrievedSR.get(i).getSuccessiveActivities();
 			boolean found = false;
+			// These two indices will be necessary when inserting the artificial activity in the trace
 			int previousindex = -1;
 			int successiveindex = -1;
 			
 			count = 0;
+			// The loop iterates over the Modified Trace (it gets extended each time when a Split Relation or a Merge (join) Relation is found.
 			for(int j=0; j<ModifiedTrace.getAI().size(); j++) {
-				if(ModifiedTrace.getAI().get(j).getA().getName().equals(PrecedentActivity.getName())) {
-					
+				if(ModifiedTrace.getAI().get(j).getA().getName().equals(PrecedentActivity.getName())) { // Here the algorithm is checking if the activity equals the name of the Precedent Activity of the Split Relation in exam
+					// found_internal is necessary for determining if there are any successive activities that follow the precedent activity. If that's not the case, then the relation is corrupted and there will be an anomaly detected by the algorithm
 					boolean found_internal = false;
 					int k = 0;
 					do {
 						if(ModifiedTrace.getAI().get(j+1).getA().getName().equals(SuccessiveActivities.get(k).getName())) {
 							found_internal = true;
-							count++;
+							count++; // Count is incremented to take into account how many Split Relations have been found
 						}
 						k++;
 					}while(found_internal == false && k<SuccessiveActivities.size());
-					if(found_internal == false)
+					if(found_internal == false) // If there's no successive activity found, then the whole found variable is put to false
 						found = false;
 					else {
+						// The two indices are modified.
 						previousindex = j;
 						successiveindex = j+1;
 						System.out.println("Split relation no. " + i + " found. previous index = " + previousindex + ", successive index = "+ successiveindex);
 						found = true;
 						if(skip==true)
-							j = ModifiedTrace.getAI().size();
+							j = ModifiedTrace.getAI().size(); // This is to exit the cycle, when 'skip' is set to true
 						
 					}
 					
 				}
 			}
 			System.out.println("Found: " + found);
+			
+			// This branch is executed if a Split Relation has been found
 			if(found == true) {
+				// This variable contains the successive activity name
 				String SuccessiveActivityName;
 				found = false;
 				int k = 0;
 				do {
 					found = false;
-					
+					// The algorithm tries to find, among the successive activities of the split relation, which is the one that matches the one found in the trace
 					SuccessiveActivityName = SuccessiveActivities.get(k).getName();
 					if(ModifiedTrace.getAI().get(successiveindex).getA().getName().equals(SuccessiveActivityName)) {
 						found = true;
@@ -316,11 +381,12 @@ public
 					k++;
 				}while(found == false && k<SuccessiveActivities.size());
 				if(found == true) {
+					// This is where the artificial activity is inserted. 
 					ModifiedTrace = insertSplit(ModifiedTrace,previousindex, successiveindex, PrecedentActivity.getName(), SuccessiveActivityName, RetrievedSR.get(i).getSuccessiveActivities(), PIToAssign);
 					
 				}
 			}
-			if(count>1) {
+			if(count>1) { // This is where the duplicates are handled. If the relation is found a second time (or a third), the skip variable is set to true
 				skip=true;
 				i--;
 			}
@@ -328,6 +394,7 @@ public
 				skip=false;
 			
 		}
+		// Every iteration considers a single merge relation, which has a single successive activity and multiple possible precedent activities
 		for(int i=0; i<RetrievedMR.size(); i++)
 		{
 			System.out.println("Merge relation no."+i+":");
@@ -339,7 +406,7 @@ public
 		}
 		skip=false;
 		for(int i=0; i<RetrievedMR.size(); i++) {
-			// every iteration considers a single split relation, which has a single precedent activity and multiple possible successive activities
+			// every iteration considers a single merge relation, which has a single successive activity and multiple possible precedent activities
 			Activity SuccessiveActivity = RetrievedMR.get(i).getSuccessiveActivity();
 			ArrayList<Activity> PrecedentActivities = RetrievedMR.get(i).getPrecedentActivities();
 			boolean found = false;
@@ -347,11 +414,12 @@ public
 			int previousindex = -1;
 			int successiveindex = -1;
 			for(int j=0; j<ModifiedTrace.getAI().size(); j++) {
-				if(ModifiedTrace.getAI().get(j).getA().getName().equals(SuccessiveActivity.getName())) {
+				if(ModifiedTrace.getAI().get(j).getA().getName().equals(SuccessiveActivity.getName())) { // Here the algorithm is checking if the activity equals the name of the Successive Activity of the Merge Relation in exam
+					// found_internal is necessary for determining if there are any precedent activities that precede the successive activity. If that's not the case, then the relation is corrupted and there will be an anomaly detected by the algorithm
 					boolean found_internal = false;
 					int k = 0;
 					do {
-						if(ModifiedTrace.getAI().get(j-1).getA().getName().equals(PrecedentActivities.get(k).getName())) {
+						if(j!= 0 && ModifiedTrace.getAI().get(j-1).getA().getName().equals(PrecedentActivities.get(k).getName())) {
 							found_internal = true;
 							count++;
 						}
@@ -371,13 +439,15 @@ public
 				}
 			}
 			System.out.println("Found: " + found);
+			// This branch is executed if a Merge Relation has been found
 			if(found == true) {
+				// This variable contains the precedent activity name
 				String PrecedentActivityName;
 				found = false;
 				int k = 0;
 				do {
 					found = false;
-					
+					// The algorithm tries to find, among the precedent activities of the merge relation, which is the one that matches the one found in the trace
 					PrecedentActivityName = PrecedentActivities.get(k).getName();
 					if(ModifiedTrace.getAI().get(previousindex).getA().getName().equals(PrecedentActivityName))
 					{
@@ -393,6 +463,7 @@ public
 					k++;
 				}while(found == false && k<PrecedentActivities.size());
 				if(found == true) {
+					// This is where the artificial activity is inserted. 
 					ModifiedTrace = insertJoin(ModifiedTrace,previousindex, successiveindex,PrecedentActivityName, SuccessiveActivity.getName(), RetrievedMR.get(i).getPrecedentActivities(), PIToAssign);
 					
 				}
@@ -409,10 +480,18 @@ public
 		
 		return ModifiedTrace;
 	}
-
+	
+	// This method inserts the artificial activities needed when a split relation is found in the original trace.
+	// Recall that the artificial activities to insert are two:
+	// 		1) <prec_act>_merge_<first_act>_..._<last_act>
+	// 		2) <first_act>_split_<prec_act>
+	// The method has therefore two parts: the first adds the activity 1) and the second adds the activity 2)
 	Trace insertSplit(Trace BaseTrace, int previousindex, int successiveindex, String PrecActivity, String SuccActivity,ArrayList<Activity> SuccessiveActivities, ProcessInstance PIToAssign) {
 		System.out.println("Previous index: " + previousindex + ", Successive index:" + successiveindex + " Precedent activity: "+ PrecActivity + ", Successive activity: "+ SuccActivity);
 		
+		// This is the first part of the method that adds the activity 1). The MergeActivityName is built
+		// considering first the PrecActivity concatenated with the _merge_ string, and afterwards all the
+		// successive activities of the SplitRelation are inserted.
 		String MergeActivityName;
 		MergeActivityName = PrecActivity+"_merge_";
 		for(int i = 0; i<SuccessiveActivities.size(); i++) {
@@ -422,19 +501,25 @@ public
 		}
 		
 		System.out.println(MergeActivityName);
+		// The artificial activity is here built.
+		// Beware a REALLY important thing: the artificial name of the activity, namely the MergeActivityName MUST be found in
+		// the activity list that is fetched from the Database. Misalignments will result in crashes (they're not handled.)
 		ActivityInstance MergeActivity = null;
 		for(int i=0; i<A.size(); i++)
-			if(A.get(i).getName().equals(MergeActivityName))
+			if(A.get(i).getName().equals(MergeActivityName)) // This must be true eventually.
 				MergeActivity = new ActivityInstance(-1,PIToAssign,A.get(i));
 		
-		System.out.println(MergeActivity.getA().getName());
+		System.out.println(MergeActivity.getA().getName()); // This print will help determining if the activity has been found.
 		
+		// This is the second part of the method that adds the activity 2). This name is easier to build. Beware of misalignments.
 		ActivityInstance SplitActivity = null;
 		for(int i=0; i<A.size(); i++)
 			if(A.get(i).getName().equals(SuccActivity+"_split_"+PrecActivity))
 				SplitActivity = new ActivityInstance(-1,PIToAssign,A.get(i));
 		
+		System.out.println(SplitActivity.getA().getName());
 		
+		// The activity instance is added to the BaseTrace,
 		BaseTrace.getAI().add(previousindex+1, MergeActivity);
 		BaseTrace.getAI().add(successiveindex+1, SplitActivity);
 		/*for(int j=0; j<BaseTrace.getAI().size(); j++)
@@ -443,9 +528,16 @@ public
 		return BaseTrace;
 	}
 	
+	// This method inserts the artificial activities needed when a merge relation is found in the original trace.
+		// Recall that the artificial activities to insert are two:
+		//		1) <first_act>_..._<last_act>_split_<prec_act>
+		// 		2) <first_act>_merge_<succ_act>
+		// The method has therefore two parts: the first adds the activity 1) and the second adds the activity 2)
 	Trace insertJoin(Trace BaseTrace, int previousindex, int successiveindex, String PrecActivity, String SuccActivity,ArrayList<Activity> PrecedentActivities, ProcessInstance PIToAssign) {
 		System.out.println("Previous index: " + previousindex + ", Successive index:" + successiveindex + " Precedent activity: "+ PrecActivity + ", Successive activity: "+ SuccActivity);
 		
+		// This is the first part of the method that adds the activity 1). The SplitActivityName is built
+		// considering first the empty string, followed by all the activities of the merge relation.
 		String SplitActivityName = "";
 		for(int i = 0; i<PrecedentActivities.size(); i++) {
 			SplitActivityName = SplitActivityName +PrecedentActivities.get(i).getName();
@@ -453,8 +545,9 @@ public
 				SplitActivityName = SplitActivityName + "_";
 		}
 		
-		
-		
+		// The activity is here built, by comparing the activity names fetched initially with the
+		// SplitActivityName augmented with _split_ and the name of the successive activity.
+		// Beware of misalignments.
 		ActivityInstance SplitActivity = null;
 		for(int i=0; i<A.size(); i++)
 			if(A.get(i).getName().equals(SplitActivityName+"_split_"+SuccActivity))
@@ -462,19 +555,21 @@ public
 		System.out.println(SplitActivityName+"_split_"+SuccActivity);
 		System.out.println(SplitActivity.getA().getName());
 		
+		// Here the artificial activity 2) is added. Beware of misalignments.
 		ActivityInstance MergeActivity = null;
 		for(int i=0; i<A.size(); i++)
 			if(A.get(i).getName().equals(PrecActivity+"_merge_"+SuccActivity))
 				MergeActivity = new ActivityInstance(-1, PIToAssign, A.get(i));
+		System.out.println(MergeActivity.getA().getName());
 		
-		
-		
+		// The activity instance is added to the Base Trace.
 		BaseTrace.getAI().add(previousindex+1, MergeActivity);
 		BaseTrace.getAI().add(successiveindex+1, SplitActivity);
 		
 		return BaseTrace;
 	}
 	
+	// This method sorts the events by their timestamps
 	ArrayList<Event> sort(ArrayList<Event> EventListToOrder){
 		//for(int i=0;i<EventListToOrder.size(); i++)
 		//	System.out.print(EventListToOrder.get(i).getAI().getA().getName() + " ");
@@ -494,9 +589,9 @@ public
 	    return EventListToOrder;
 	}
 	
-	/*public static void main(String[] args) throws FileNotFoundException, IOException, SQLException {
+	public static void main(String[] args) throws FileNotFoundException, IOException, SQLException {
 		Checker C = new Checker();
-		ArrayList<Trace> NonConformantTraces = C.onlineConformanceChecking(1);
+		ArrayList<Trace> NonConformantTraces = C.onlineConformanceChecking();
 		for(int i=0; i<NonConformantTraces.size(); i++) {
 			System.out.print("Non conformant trace " + i + ": ");
 			for(int j=0; j<NonConformantTraces.get(i).getAI().size(); j++)
@@ -504,6 +599,6 @@ public
 			System.out.println();
 		}
 		
-	}*/
+	}
 	
 }

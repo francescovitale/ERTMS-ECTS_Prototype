@@ -45,5 +45,11 @@ public class ProcessInstanceDAO {
 		}
 			
 	}
+	
+	public static void deleteProcessInstance(int CaseID, Connection Conn) throws SQLException {
+		Statement stmt = Conn.createStatement();
+		String query = "DELETE FROM eventlog.processinstance WHERE CaseID=" + CaseID;
+		stmt.executeUpdate(query);
+	}
 
 }

@@ -6,6 +6,8 @@ private
 	ProcessInstance PI;
 	Event E;
 	Activity A;
+	
+	Trace T;
 
 public
 	ActivityInstance(ProcessInstance processInstance, Activity activity) {
@@ -13,6 +15,7 @@ public
 		PI = null;
 		E = null;
 		A = null;
+		T = null;
 	}
 
 	public ActivityInstance(int ID_in,ProcessInstance PI_in, Activity A_in) {
@@ -20,12 +23,22 @@ public
 		PI = PI_in;
 		A = A_in;
 		E = null;
+		T = null;
+	}
+
+	public ActivityInstance(int ID_in,ProcessInstance PI_in, Activity A_in, Trace T_in) {
+		ID = ID_in;
+		PI = PI_in;
+		A = A_in;
+		E = null;
+		T = T_in;
 	}
 	ActivityInstance(ActivityInstance AI){
 		PI = new ProcessInstance(AI.getPI());
 		A = new Activity(AI.getA());
 		E = new Event(AI.getE());
 		ID = AI.getID();
+		T = AI.getT();
 	}
 	
 	public ProcessInstance getPI() {
@@ -53,5 +66,13 @@ public
 
 	public void setID(int iD) {
 		ID = iD;
+	}
+
+	public Trace getT() {
+		return T;
+	}
+
+	public void setT(Trace t) {
+		T = t;
 	}
 }

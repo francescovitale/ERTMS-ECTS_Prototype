@@ -1,30 +1,81 @@
 package ad;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
 
-import Middleware.ADMQTTClient;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
 import ObjectAbstraction.Logger;
+import ObjectAbstraction.PMLogic.Trace;
 
 public class AnomalyDetectorController {
+	
+	private volatile static AnomalyDetectorController ADC = null;
 
-	public AnomalyDetectorController() {}
-	public void initializeClient() throws MqttException {
+	private AnomalyDetectorController() {}
+	
+	public static AnomalyDetectorController getInstance() {
+		if(ADC == null) {
+			synchronized(AnomalyDetectorController.class) {
+				if(ADC == null) {
+					ADC = new AnomalyDetectorController();
+				}
+			}
+		}
+		return ADC;
+	}
+	
+	public void initializeClient()  {
 		
-		ADMQTTClient AMC = ADMQTTClient.getInstance("tcp://192.168.1.2:1883", "adc");
-		AMC.connect();
-		AMC.initializeListener();
 	}
 	public void logEvent(Message EventToLog, String ProcessName) {
 		Logger L = new Logger();
-		L.logEvent(EventToLog.getTimestamp(), EventToLog.getCaseID(), EventToLog.getResource(),EventToLog.getActivity(), ProcessName);		
+		try {
+			L.logEvent(EventToLog.getTimestamp(), EventToLog.getCaseID(), EventToLog.getResource(),EventToLog.getActivity(), ProcessName);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
 	
 	}
-	public void sendAnomalousTrace() {
+	public String getAnomalousTraces() {
+		Logger L = new Logger();
+		String Traces = "";
+		try {
+			ArrayList<Trace> AT = L.getAnomalousTraces();
+			for(int i=0; i<AT.size(); i++)
+			{
+				for(int j=0;j<AT.get(i).getAI().size();j++) {
+					System.out.print(AT.get(i).getAI().get(j).getA().getName() + " ");
+				}
+				System.out.println();
+			}
+			System.out.println(AT.size());
+			System.out.println(AT.get(1).getAI().size());
+			for(int i = 0; i<AT.size(); i++) {
+				for(int j=0; j<AT.get(i).getAI().size(); j++) {
+					
+					if(j==0) {
+						Traces = Traces + "<" + AT.get(i).getAI().get(j).getA().getName() + ",";
+					}
+					if(j > 0 && j < AT.get(i).getAI().size()-1) {
+						Traces = Traces + AT.get(i).getAI().get(j).getA().getName() + ",";
+					}
+					if(j == AT.get(i).getAI().size()-1) {
+						Traces = Traces + AT.get(i).getAI().get(j).getA().getName() + ">:";
+					}
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return Traces;
 	}
 	
 	
 	public static void main(String[] args) throws Exception {
 		AnomalyDetectorController ADC = new AnomalyDetectorController();
 		ADC.initializeClient();
+		ADC.getAnomalousTraces();
 	}
 }
