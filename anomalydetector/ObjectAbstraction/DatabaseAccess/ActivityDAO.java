@@ -21,7 +21,7 @@ public class ActivityDAO {
 			String ActivityPMName = rs.getString("ProcessModel");
 			for(int i=0; i<PMList.size(); i++) {
 				if(PMList.get(i).getName().equals(ActivityPMName)) {
-					A = new Activity(rs.getString("Name"),PMList.get(i));
+					A = new Activity(rs.getString("Name"),PMList.get(i),rs.getString("Resource"));
 					AList.add(A);
 				}
 				
@@ -35,7 +35,7 @@ public class ActivityDAO {
 
 	public static void insertActivity(Activity A, Connection Conn) throws SQLException {
 		Statement stmt = Conn.createStatement();
-		String query = "INSERT INTO eventlog.activity 'Name', 'ProcessModel' VALUES '"+A.getName()+"','"+ A.getPM().getName() +"'";
+		String query = "INSERT INTO eventlog.activity 'Name', 'ProcessModel','Resource' VALUES '"+A.getName()+"','"+ A.getPM().getName() +"','"+A.getResource()+"'";      
 		stmt.executeUpdate(query);
 	}
 }

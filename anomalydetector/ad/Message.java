@@ -11,8 +11,9 @@ public class Message {
 	String TD;
 	boolean Retry;
 	int CaseID;
+	boolean Aware;
 	
-	public Message(String T, String R, int L, int TData, String M, String TermD, boolean Ret, String A, int CID) {
+	public Message(String T, String R, int L, int TData, String M, String TermD, boolean Ret, String A, int CID, boolean Aw) {
 		Timestamp = T;
 		Resource = R;
 		Activity = A;
@@ -22,6 +23,7 @@ public class Message {
 		TD = TermD;
 		Retry = Ret;
 		CaseID = CID;
+		Aware = Aw;
 	}
 
 	public String getTimestamp() {
@@ -94,6 +96,14 @@ public class Message {
 
 	public void setCaseID(int caseID) {
 		CaseID = caseID;
+	}
+
+	public boolean isAware() {
+		return Aware;
+	}
+
+	public void setAware(boolean aware) {
+		Aware = aware;
 	}
 	
 	

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class Activity {
 private
 	String Name;
+	String Resource;
 	ArrayList<ActivityInstance> AI;
 	ProcessModel PM;
 public
@@ -13,9 +14,10 @@ public
 		PM = null;
 		AI = null;
 	}
-	public Activity(String N, ProcessModel P_in) {
+	public Activity(String N, ProcessModel P_in, String R_in) {
 		Name = N;
 		PM = P_in;
+		Resource = R_in;
 		AI = null;
 	}
 	Activity(Activity A_in){
@@ -40,5 +42,11 @@ public
 	}
 	public void setPM(ProcessModel pM) {
 		PM = pM;
+	}
+	public String getResource() {
+		return Resource;
+	}
+	public void setResource(String resource) {
+		Resource = resource;
 	}
 }

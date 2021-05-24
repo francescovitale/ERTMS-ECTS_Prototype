@@ -30,7 +30,7 @@ public class AnomalyDetectorController {
 	public void logEvent(Message EventToLog, String ProcessName) {
 		Logger L = new Logger();
 		try {
-			L.logEvent(EventToLog.getTimestamp(), EventToLog.getCaseID(), EventToLog.getResource(),EventToLog.getActivity(), ProcessName);
+			L.logEvent(EventToLog.getTimestamp(), EventToLog.getCaseID(), EventToLog.getResource(),EventToLog.getActivity(),EventToLog.isAware(), ProcessName);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -77,5 +77,7 @@ public class AnomalyDetectorController {
 		AnomalyDetectorController ADC = new AnomalyDetectorController();
 		ADC.initializeClient();
 		ADC.getAnomalousTraces();
+		
+		
 	}
 }

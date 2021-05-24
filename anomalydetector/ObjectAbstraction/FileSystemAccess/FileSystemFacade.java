@@ -10,11 +10,13 @@ import ObjectAbstraction.PMLogic.*;
 public class FileSystemFacade {
 	private PetriNetReader PNR;
 	private BPMNReader BPMNR;
+	private TRParameterReader TRPR;
 	private volatile static FileSystemFacade FSF = null;
 
 	private FileSystemFacade(String Path, String ProcessName) {
 		PNR = new PetriNetReader(Path, ProcessName);
 		BPMNR = new BPMNReader(Path, ProcessName);
+		TRPR = new TRParameterReader(Path, ProcessName);
 	}
 	public static FileSystemFacade getInstance(String Path, String ProcessName) {
 		if(FSF==null) {
@@ -38,6 +40,15 @@ public class FileSystemFacade {
 		BPMN_model.setMR(BPMNR.getMergeRelations(A));
 		BPMN_model.setSR(BPMNR.getSplitRelations(A));
 		return BPMN_model;
+	}
+	
+	public ArrayList<TRParameter> getTRParameterList(ProcessModel PMIn) throws FileNotFoundException{
+		ArrayList<TRParameter> TRPList;
+		
+		TRPList = TRPR.getTRParameterList(PMIn);
+		
+		return TRPList;
+		
 	}
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException, SQLException {
@@ -79,6 +90,11 @@ public class FileSystemFacade {
 			for(int j=0;j<BPMN_model.getMR().get(i).getPrecedentActivities().size();j++)
 				System.out.print(BPMN_model.getMR().get(i).getPrecedentActivities().get(j).getName()+" ");
 			System.out.println();
+		}
+		
+		ArrayList<TRParameter> TRPList = MyFSF.getTRParameterList(PM);
+		for(int i=0; i<TRPList.size(); i++) {
+			System.out.println("Resource: "+ TRPList.get(i).getResource() + " Parameter value: " + TRPList.get(i).getValue());
 		}
 	}
 	

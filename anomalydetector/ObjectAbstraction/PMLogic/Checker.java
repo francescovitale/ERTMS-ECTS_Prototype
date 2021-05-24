@@ -16,6 +16,7 @@ private
 	ArrayList<ProcessModel> P;
 	PetriNet PN;
 	BPMN BPMN_model;
+	ArrayList<TRParameter> TRP;
 	
 public
 	Checker(){}
@@ -26,9 +27,6 @@ public
 		PI = DBF.getProcessInstanceList(P);
 		AI = DBF.getActivityInstanceList(A, PI);
 		E = DBF.getEventList(PI,AI);
-		for(int i=0;i<E.size(); i++)
-			System.out.print(E.get(i).getAI().getA().getName() + " ");
-		System.out.println();
 		
 	}
 	
@@ -36,10 +34,11 @@ public
 	void initializeFSDataStructures(FileSystemFacade FSF, ProcessModel PM) throws FileNotFoundException, IOException {
 		PN = FSF.getPetriNet(PM, A);
 		BPMN_model = FSF.getBPMN(PM, A);
+		TRP = FSF.getTRParameterList(PM);
 	}
 	
 	// This method performs the Conformance Checking through use of the Token Replay technique.
-	public ArrayList<Trace> onlineConformanceChecking() throws FileNotFoundException, IOException, SQLException{
+	public ArrayList<Trace> onlineConformanceChecking(boolean aware) throws FileNotFoundException, IOException, SQLException{
 		DBFacade DBF = new DBFacade();
 		
 		// The private data structures stored in the Database are fetched
@@ -49,9 +48,6 @@ public
 		ArrayList<Trace> ReturnedTraces = new ArrayList<Trace>();
 		ArrayList<Description> CDL = new ArrayList<Description>();
 		ArrayList<ProcessModel> found_PM = new ArrayList<ProcessModel>();
-			
-		/*for(int i=0; i<E.size(); i++)
-			System.out.println(E.get(i).getAI().getName());*/
 		
 		// In this cycle only one Process Model is considered per group of Process Instances
 		for(int i = 0; i<PI.size(); i++) {
@@ -71,11 +67,6 @@ public
 			FileSystemFacade FSF = FileSystemFacade.getInstance("C:\\Users\\aceep\\OneDrive\\Desktop\\Files\\StartOfMission", "start_of_mission");
 			// The private data structures stored in the files are fetched
 			initializeFSDataStructures(FSF,found_PM.get(i));
-			/*ArrayList<String> P = PN.getPlaces();
-			PN.updateMarking(P, null);
-			for(int j=0;j<PN.getMarking().size();j++) {
-				System.out.println(PN.getMarking().get(P.get(j)));
-			}*/
 			
 			// This ArrayList of ArrayLists will contain the base traces and the extended traces
 			ArrayList<ArrayList<Trace>> ObtainedTraces;
@@ -83,13 +74,7 @@ public
 			// The last transition must be taken into account.
 			ObtainedTraces = buildTraces(); // the 0 position contains the normal traces and the 1 position contains the modified traces
 			
-			for(int j=0; j<PN.getPlaces().size(); j++)
-				System.out.print(PN.getPlaces().get(j)+ " ");
-			System.out.println();
-			for(int j=0; j<PN.getTransitions().size(); j++)
-				System.out.print(PN.getTransitions().get(j).getName()+ " ");
-			System.out.println();
-			
+			System.out.println("Base trace n." + i);
 			for(int j=0; j<ObtainedTraces.get(0).size(); j++) {
 				for(int k=0; k<ObtainedTraces.get(0).get(j).getAI().size(); k++) {
 					System.out.print(ObtainedTraces.get(0).get(j).getAI().get(k).getA().getName()+" ");
@@ -97,6 +82,7 @@ public
 				System.out.println();
 			}
 			System.out.println();
+			System.out.println("Extended trace n." + i);
 			for(int j=0; j<ObtainedTraces.get(1).size(); j++) {
 				for(int k=0; k<ObtainedTraces.get(1).get(j).getAI().size(); k++) {
 					System.out.print(ObtainedTraces.get(1).get(j).getAI().get(k).getA().getName()+" ");
@@ -107,7 +93,7 @@ public
 			
 			// To the ArrayList of Descriptions the results of the tokenReplay() method are considered.
 			// The tokenReplay method applies the Token Replay technique and infers a fitness parameter.
-			CDL.add(tokenReplay(ObtainedTraces.get(1),ObtainedTraces.get(0)));
+			CDL.add(tokenReplay(ObtainedTraces.get(1),ObtainedTraces.get(0),aware));
 			
 			System.out.println("Fitness: " + CDL.get(i).getFitness());
 			for(int j=0;j<CDL.get(i).getT().size();j++) {
@@ -129,7 +115,6 @@ public
 				for(int k=0; k<ObtainedTraces.get(0).get(j).getAI().size(); k++)
 					ActID[k] = ObtainedTraces.get(0).get(j).getAI().get(k).getID();
 				DBF.deleteEvent(ActID, CaseID);
-				System.out.println("deleting");
 			}
 		}
 		for(int i=0; i<CDL.size(); i++)
@@ -137,6 +122,10 @@ public
 				ReturnedTraces.add(CDL.get(i).getT().get(j));
 				
 			}
+		
+		for(int i=0; i<TRP.size(); i++) {
+			System.out.println("Resource: " + TRP.get(i).getResource() + " Counter: " + TRP.get(i).getCounter());
+		}
 		/*for(int i=0; i<ReturnedTraces.size(); i++)
 			for(int j=0; j<ReturnedTraces.get(i).getAI().size(); j++)
 				System.out.println(ReturnedTraces.get(i).getAI().get(j));*/
@@ -145,7 +134,7 @@ public
 	}
 	
 	// This method performs the so-called Token Replay technique.
-	Description tokenReplay(ArrayList<Trace> ProcessModifiedTraces, ArrayList<Trace> ProcessTraces) {
+	Description tokenReplay(ArrayList<Trace> ProcessModifiedTraces, ArrayList<Trace> ProcessTraces, boolean Aware) {
 		/*for(int i=0; i<ProcessTraces.size(); i++) {
 			for(int j=0;j<ProcessTraces.get(i).getAI().size(); j++)
 				System.out.print(ProcessTraces.get(i).getAI().get(j).getName() + " ");
@@ -159,6 +148,8 @@ public
 		Description DL = new Description();
 		float Fitness = (float) 0.0;
 		ReplayParameters RPGlobal = new ReplayParameters();
+		ReplayParameters RPLocalTemp;
+		String ActResource;
 		// The Token Replay techniques is applied for each trace.
 		for(int i=0; i<ProcessModifiedTraces.size(); i++) {
 			ReplayParameters RPLocal = new ReplayParameters(1,0,0,0,false);
@@ -171,8 +162,47 @@ public
 				for(int k=0; k<A.size(); k++)
 					if(A.get(k).getName().equals(ProcessModifiedTraces.get(i).getAI().get(j).getA().getName()))
 						AToFire = A.get(k);
-				// The activity is fired on the Petri Net. The Petri Net itself updates the 
+				// The activity is fired on the Petri Net. The Petri Net itself updates the parameters
+				
+				RPLocalTemp = new ReplayParameters(RPLocal);
+				
 				RPLocal = PN.fire(AToFire, RPLocal);
+				
+				if(RPLocal.getM()-RPLocalTemp.getM()>0) {
+					
+					ArrayList<Activity> UnfiredActivities;
+					UnfiredActivities = PN.getUnfiredActivities();
+					for(int k = 0; k<UnfiredActivities.size(); k++) {
+						System.out.println("Unfired activities: " + UnfiredActivities.get(k).getName());
+					}
+					System.out.println();
+					/*ArrayList<Activity> RecoveredProcessActivities = new ArrayList<Activity>();
+					ArrayList<String> RecoveredResources = new ArrayList<String>();
+					for(int k=0; k<E.size(); k++) {
+						
+						for(int l=0; l<ProcessModifiedTraces.get(i).getAI().size(); l++) {
+							if(E.get(k).getAI().getA().getName().equals(ProcessModifiedTraces.get(i).getAI().get(l).getA().getName())) {
+								if(E.get(k).getAI().getID() == ProcessModifiedTraces.get(i).getAI().get(l).getID()) {
+									RecoveredProcessActivities.add(E.get(k).getAI().getA());
+									RecoveredResources.add(E.get(k).getResource());
+								}
+							}
+						}
+					}*/
+					//System.out.println(RecoveredProcessActivities.size());
+					for(int k=0; k<UnfiredActivities.size(); k++) {
+						for(int l=0; l<A.size(); l++) {
+							if(UnfiredActivities.get(k).getName().equals(A.get(l).getName())) {
+								for(int s=0; s<TRP.size(); s++) {
+									if(TRP.get(s).getResource().equals(A.get(l).getResource())) {
+										TRP.get(s).setCounter(TRP.get(s).getCounter()+1);
+									}
+								}
+							}
+						}
+					}
+				}
+				
 				
 				System.out.println("Iteration " + j + " for activity " + AToFire.getName() + ": Local p: "+RPLocal.getP() + " Local c: "+RPLocal.getC() + " Local m: "+RPLocal.getM() + "Local r: "+RPLocal.getR());
 				
@@ -198,9 +228,22 @@ public
 			RPGlobal.setR(RPGlobal.getR()+RPLocal.getR());
 			// The Petri Net is re-initialized.
 			PN.initializeMarking();
+			PN.resetUnfiredActivities();
 		}
 		// The Fitness parameter is updated.
-		Fitness = (float)1/2 * (1-((float)RPGlobal.getM()/(float)RPGlobal.getC())) + (float)1/2 * (1-((float)RPGlobal.getR()/(float)RPGlobal.getP()));
+		/*
+		 * Fitness(sigma, N, lambda_i) = (1/2(1-m/c)+1/2(1-r/p))(a/(1+sum_i lambda_i*m_i)+(1-a))
+		 */
+		float Second_factor_den_sum = (float) 1.0;
+		for(int i=0; i<TRP.size(); i++) {
+			Second_factor_den_sum += (float)((float)TRP.get(i).getCounter()*(float)TRP.get(i).getValue());
+		}
+		float Second_factor = (float)(Aware ? 0 : 1)/((float)Second_factor_den_sum) + 1-(float)(Aware ? 0 : 1);
+		System.out.println("Second factor:" + Second_factor);
+		
+		float First_factor = ((float)1/2 * (1-((float)RPGlobal.getM()/(float)RPGlobal.getC())) + (float)1/2 * (1-((float)RPGlobal.getR()/(float)RPGlobal.getP())));
+		System.out.println("First factor:" + First_factor);
+		Fitness = (float)(First_factor * Second_factor);
 		
 		DL.setFitness(Fitness);
 		
@@ -259,11 +302,6 @@ public
 		ArrayList<Event> TempEvent = new ArrayList<Event>(E);
 		boolean found = false;
 		
-		for(int i=0;i<E.size(); i++)
-			System.out.print(E.get(i).getAI().getA().getName() + " ");
-		System.out.println();
-		
-		
 		do {
 			
 			found = false;
@@ -281,10 +319,6 @@ public
 			}
 		} while(found == true);
 		
-		for(int i=0;i<EventListToOrder.size(); i++)
-			System.out.print(EventListToOrder.get(i).getAI().getA().getName() + " ");
-		System.out.println();
-		
 		// Through the sort method, which simply implements an Insertion Sort, the events are sorted by their timestamp
 		EventListToOrder = sort(EventListToOrder);
 		
@@ -296,9 +330,6 @@ public
 		}
 		// The Built Trace is populated with the recovered Activity Instance ArrayList.
 		BuiltTrace.setAI(OrderedAIArray);
-		for(int i = 0; i<BuiltTrace.getAI().size(); i++)
-			System.out.print(BuiltTrace.getAI().get(i).getA().getName()+ " ");
-		System.out.println();
 		
 		return BuiltTrace;
 	}
@@ -322,7 +353,7 @@ public
 			System.out.println();
 		}
 		// The skip variable is used to manage multiple instances of the same activity (this happens for loops)
-		boolean skip = false;
+		int skip = 0;
 		for(int i=0; i<RetrievedSR.size(); i++) {
 			// Every iteration considers a single split relation, which has a single precedent activity and multiple possible successive activities
 			Activity PrecedentActivity = RetrievedSR.get(i).getPrecedentActivity();
@@ -354,14 +385,14 @@ public
 						successiveindex = j+1;
 						System.out.println("Split relation no. " + i + " found. previous index = " + previousindex + ", successive index = "+ successiveindex);
 						found = true;
-						if(skip==true)
+						if(skip==1)
 							j = ModifiedTrace.getAI().size(); // This is to exit the cycle, when 'skip' is set to true
-						
+						else
+							skip--;
 					}
 					
 				}
 			}
-			System.out.println("Found: " + found);
 			
 			// This branch is executed if a Split Relation has been found
 			if(found == true) {
@@ -386,12 +417,12 @@ public
 					
 				}
 			}
-			if(count>1) { // This is where the duplicates are handled. If the relation is found a second time (or a third), the skip variable is set to true
-				skip=true;
+			//System.out.println(count);
+			skip = count-1;
+			
+			if(skip >0) {
 				i--;
 			}
-			else
-				skip=false;
 			
 		}
 		// Every iteration considers a single merge relation, which has a single successive activity and multiple possible precedent activities
@@ -404,8 +435,14 @@ public
 				System.out.print(RetrievedMR.get(i).getPrecedentActivities().get(j).getName()+" ");
 			System.out.println();
 		}
-		skip=false;
+		skip=0;
 		for(int i=0; i<RetrievedMR.size(); i++) {
+			System.out.println("Modified trace:");
+			for(int j = 0; j<ModifiedTrace.getAI().size(); j++) {
+				System.out.print(ModifiedTrace.getAI().get(j).getA().getName()+ " ");
+				
+			}
+			System.out.println();
 			// every iteration considers a single merge relation, which has a single successive activity and multiple possible precedent activities
 			Activity SuccessiveActivity = RetrievedMR.get(i).getSuccessiveActivity();
 			ArrayList<Activity> PrecedentActivities = RetrievedMR.get(i).getPrecedentActivities();
@@ -432,13 +469,15 @@ public
 						successiveindex = j;
 						System.out.println("Merge relation no. " + i + " found. previous index = " + previousindex + ", successive index = "+ successiveindex);
 						found = true;
-						if(skip==true)
+						if(skip==1)
 							j = ModifiedTrace.getAI().size();
+						else
+							skip--;
 					}
+					
 					
 				}
 			}
-			System.out.println("Found: " + found);
 			// This branch is executed if a Merge Relation has been found
 			if(found == true) {
 				// This variable contains the precedent activity name
@@ -468,12 +507,14 @@ public
 					
 				}
 			}
-			if(count>1) {
-				skip=true;
+			System.out.println(count);
+			skip = count-1;
+			
+			if(skip >0) {
 				i--;
 			}
-			else
-				skip=false;
+			
+			
 			
 		}
 		
@@ -500,7 +541,7 @@ public
 				MergeActivityName = MergeActivityName+"_";
 		}
 		
-		System.out.println(MergeActivityName);
+		System.out.println("MergeActivityName: " + MergeActivityName);
 		// The artificial activity is here built.
 		// Beware a REALLY important thing: the artificial name of the activity, namely the MergeActivityName MUST be found in
 		// the activity list that is fetched from the Database. Misalignments will result in crashes (they're not handled.)
@@ -509,7 +550,7 @@ public
 			if(A.get(i).getName().equals(MergeActivityName)) // This must be true eventually.
 				MergeActivity = new ActivityInstance(-1,PIToAssign,A.get(i));
 		
-		System.out.println(MergeActivity.getA().getName()); // This print will help determining if the activity has been found.
+		System.out.println("MergeActivityName of the actual Activity: " + MergeActivity.getA().getName()); // This print will help determining if the activity has been found.
 		
 		// This is the second part of the method that adds the activity 2). This name is easier to build. Beware of misalignments.
 		ActivityInstance SplitActivity = null;
@@ -517,8 +558,8 @@ public
 			if(A.get(i).getName().equals(SuccActivity+"_split_"+PrecActivity))
 				SplitActivity = new ActivityInstance(-1,PIToAssign,A.get(i));
 		
-		System.out.println(SplitActivity.getA().getName());
-		
+		System.out.println("SplitActivityName of the actual activity"+ SplitActivity.getA().getName());
+		System.out.println();
 		// The activity instance is added to the BaseTrace,
 		BaseTrace.getAI().add(previousindex+1, MergeActivity);
 		BaseTrace.getAI().add(successiveindex+1, SplitActivity);
@@ -552,16 +593,16 @@ public
 		for(int i=0; i<A.size(); i++)
 			if(A.get(i).getName().equals(SplitActivityName+"_split_"+SuccActivity))
 				SplitActivity = new ActivityInstance(-1,PIToAssign,A.get(i));
-		System.out.println(SplitActivityName+"_split_"+SuccActivity);
-		System.out.println(SplitActivity.getA().getName());
+		System.out.println("SplitActivityName: " + SplitActivityName+"_split_"+SuccActivity);
+		System.out.println("SplitActivityName of the actual activity: " + SplitActivity.getA().getName());
 		
 		// Here the artificial activity 2) is added. Beware of misalignments.
 		ActivityInstance MergeActivity = null;
 		for(int i=0; i<A.size(); i++)
 			if(A.get(i).getName().equals(PrecActivity+"_merge_"+SuccActivity))
 				MergeActivity = new ActivityInstance(-1, PIToAssign, A.get(i));
-		System.out.println(MergeActivity.getA().getName());
-		
+		System.out.println("MergeActivityName of the actual activity: " + MergeActivity.getA().getName());
+		System.out.println();
 		// The activity instance is added to the Base Trace.
 		BaseTrace.getAI().add(previousindex+1, MergeActivity);
 		BaseTrace.getAI().add(successiveindex+1, SplitActivity);
@@ -571,15 +612,11 @@ public
 	
 	// This method sorts the events by their timestamps
 	ArrayList<Event> sort(ArrayList<Event> EventListToOrder){
-		//for(int i=0;i<EventListToOrder.size(); i++)
-		//	System.out.print(EventListToOrder.get(i).getAI().getA().getName() + " ");
-		//System.out.println();
 		int n = EventListToOrder.size();
 	    for (int i = 1; i < n; ++i) {
 	        Event key = EventListToOrder.get(i);
 	        int j = i - 1;
 	        while (j >= 0 && EventListToOrder.get(j).getT() > key.getT()) {
-	        	//System.out.println("key: " + key.getAI().getA().getName() + "T:" + key.getT() +", EventListToOrder.get(j):" + EventListToOrder.get(j).getAI().getA().getName() + "T:" + EventListToOrder.get(j).getT());
 	        	EventListToOrder.set(j+1, EventListToOrder.get(j));
 	            j = j - 1;
 	        }
@@ -591,7 +628,8 @@ public
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException, SQLException {
 		Checker C = new Checker();
-		ArrayList<Trace> NonConformantTraces = C.onlineConformanceChecking();
+		boolean aware = false;
+		ArrayList<Trace> NonConformantTraces = C.onlineConformanceChecking(aware);
 		for(int i=0; i<NonConformantTraces.size(); i++) {
 			System.out.print("Non conformant trace " + i + ": ");
 			for(int j=0; j<NonConformantTraces.get(i).getAI().size(); j++)
@@ -599,6 +637,45 @@ public
 			System.out.println();
 		}
 		
+		/*String Trial = "som_selstart_dmi_1_merge_som_sendMAreq";
+		
+		String [] Parts = Trial.split("_merge_");
+		for(int i=0; i<Parts.length; i++) {
+			System.out.println(Parts[i]);
+		}
+		if(Parts.length<=1) {
+			System.out.println("The activity is not an artificial activity");
+		}
+		else {
+			String [] NextActivities = Parts[1].split("som_");
+			for(int i=0; i<NextActivities.length; i++)
+				System.out.println(NextActivities[i]);
+			if(NextActivities.length <= 2) {
+				System.out.println("The found artificial activity is the merge activity of a join gateway");
+				System.out.println(NextActivities.length);
+				NextActivities[1] = "som_" + NextActivities[1];
+				System.out.println(NextActivities[1]);
+			}
+			else if(NextActivities.length >2) {
+				System.out.println("The found artificial activity is the merge activity of a split gateway");
+				for(int i = 1; i<NextActivities.length; i++) {
+					if(i<NextActivities.length-1) {
+						NextActivities[i] = "som_" + NextActivities[i].substring(0,NextActivities[i].length()-1);
+					}
+					else {
+						NextActivities[i] = "som_" + NextActivities[i];
+					}
+				}
+				for(int i=0;i<NextActivities.length; i++) {
+					System.out.println(NextActivities[i]);
+				}
+			}
+		}
+		*/
+		/*String [] Parts2 = Parts[1].split("som_");
+		for(int i=0; i<Parts2.length; i++) {
+			System.out.println(Parts2[i]);
+		}*/
 	}
 	
 }

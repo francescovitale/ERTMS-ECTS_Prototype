@@ -1,5 +1,7 @@
 package ObjectAbstraction.PMLogic;
 
+import ObjectAbstraction.PMLogic.ReplayParameters;
+
 public class ReplayParameters {
 	int p,c,m,r;
 	boolean end;
@@ -17,6 +19,13 @@ public class ReplayParameters {
 		m = m_in;
 		r = r_in;
 		end = e;
+	}
+	public ReplayParameters(ReplayParameters rPLocal) {
+		p = rPLocal.getP();
+		c = rPLocal.getC();
+		m = rPLocal.getM();
+		r = rPLocal.getR();
+		end = rPLocal.isEnd();
 	}
 	public int getP() {
 		return p;

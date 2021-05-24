@@ -164,9 +164,9 @@ public
 	void insertProcess(String PMName) throws SQLException {
 		ProcessDAO.insertProcessModel(PMName, Conn);
 	};
-	void insertActivity(String AName, String PMName) throws SQLException {
+	void insertActivity(String AName, String PMName, String Res) throws SQLException {
 		ProcessModel PM = new ProcessModel(PMName);
-		Activity A = new Activity(AName, PM);
+		Activity A = new Activity(AName, PM, Res);
 		ActivityDAO.insertActivity(A, Conn);
 	};
 	void insertProcessInstance(int CaseID, String PM) throws SQLException {
@@ -232,22 +232,22 @@ public
 			DBF.insertEvent(TS,"dmi", 0, "som_enterid_dmi_1", "StartOfMission");
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 			DBF.insertEvent(TS,"evc", 0, "som_storeid_evc_1", "StartOfMission");
-			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-			DBF.insertEvent(TS,"evc", 0, "som_validate_evc_1", "StartOfMission");
+			/*TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+			DBF.insertEvent(TS,"evc", 0, "som_validate_evc_1", "StartOfMission");*/
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 			DBF.insertEvent(TS,"rtm", 0, "som_openconn_rtm_1", "StartOfMission");
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 			DBF.insertEvent(TS,"rtm", 0, "som_giveup_evc_1", "StartOfMission");
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 			DBF.insertEvent(TS,"dmi", 0, "som_driversel_dmi_1", "StartOfMission");
-			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-			DBF.insertEvent(TS,"dmi", 0, "som_inserttraindata_dmi_1", "StartOfMission");
+			/*TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+			DBF.insertEvent(TS,"dmi", 0, "som_inserttraindata_dmi_1", "StartOfMission");*/
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 			DBF.insertEvent(TS,"rtm", 0, "som_checkrbcsess_rtm_1", "StartOfMission");
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 			DBF.insertEvent(TS,"dmi", 0, "som_selstart_dmi_1", "StartOfMission");
-			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-			DBF.insertEvent(TS,"evc", 0, "som_checklev_evc_1", "StartOfMission");
+			/*TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+			DBF.insertEvent(TS,"evc", 0, "som_checklev_evc_1", "StartOfMission");*/
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 			DBF.insertEvent(TS,"evc", 0, "som_grantUN_evc_1", "StartOfMission");
 			TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
@@ -306,7 +306,7 @@ public
 			ArrayList<Activity> AList = DBF.getActivityList(PMList);
 			System.out.println("Activities:");
 			for(int i=0; i<AList.size(); i++)
-				System.out.println(AList.get(i).getName() + " " + AList.get(i).getPM().getName());
+				System.out.println(AList.get(i).getName() + " " + AList.get(i).getPM().getName() + " " + AList.get(i).getResource());
 			System.out.println();
 			ArrayList<ProcessInstance> PIList = DBF.getProcessInstanceList(PMList);
 			System.out.println("Process instances:");
