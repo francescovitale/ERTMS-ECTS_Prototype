@@ -27,10 +27,10 @@ public class AnomalyDetectorController {
 	public void initializeClient()  {
 		
 	}
-	public void logEvent(Message EventToLog, String ProcessName) {
+	public void logEvent(Message EventToLog, String ProcessName, String Path) {
 		Logger L = new Logger();
 		try {
-			L.logEvent(EventToLog.getTimestamp(), EventToLog.getCaseID(), EventToLog.getResource(),EventToLog.getActivity(),EventToLog.isAware(), ProcessName);
+			L.logEvent(EventToLog.getTimestamp(), EventToLog.getCaseID(), EventToLog.getResource(),EventToLog.getActivity(),EventToLog.isAware(), ProcessName, Path);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

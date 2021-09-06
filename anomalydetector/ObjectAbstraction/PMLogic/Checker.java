@@ -38,7 +38,7 @@ public
 	}
 	
 	// This method performs the Conformance Checking through use of the Token Replay technique.
-	public ArrayList<Trace> onlineConformanceChecking(boolean aware) throws FileNotFoundException, IOException, SQLException{
+	public ArrayList<Trace> onlineConformanceChecking(boolean aware, String Path) throws FileNotFoundException, IOException, SQLException{
 		DBFacade DBF = new DBFacade();
 		
 		// The private data structures stored in the Database are fetched
@@ -64,7 +64,7 @@ public
 		
 		// This is the main cycle. It cycles over all the Process Models found in the Database.
 		for(int i = 0; i<found_PM.size(); i++) {
-			FileSystemFacade FSF = FileSystemFacade.getInstance("C:\\Users\\aceep\\OneDrive\\Desktop\\Files\\StartOfMission", "start_of_mission");
+			FileSystemFacade FSF = FileSystemFacade.getInstance(Path+"/process_files", "start_of_mission");
 			// The private data structures stored in the files are fetched
 			initializeFSDataStructures(FSF,found_PM.get(i));
 			
@@ -114,7 +114,7 @@ public
 				CaseID = ObtainedTraces.get(0).get(j).getAI().get(j).getPI().getCaseID();
 				for(int k=0; k<ObtainedTraces.get(0).get(j).getAI().size(); k++)
 					ActID[k] = ObtainedTraces.get(0).get(j).getAI().get(k).getID();
-				DBF.deleteEvent(ActID, CaseID);
+				//DBF.deleteEvent(ActID, CaseID);
 			}
 		}
 		for(int i=0; i<CDL.size(); i++)
@@ -627,7 +627,7 @@ public
 	}
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException, SQLException {
-		Checker C = new Checker();
+		/*Checker C = new Checker();
 		boolean aware = false;
 		ArrayList<Trace> NonConformantTraces = C.onlineConformanceChecking(aware);
 		for(int i=0; i<NonConformantTraces.size(); i++) {
@@ -637,7 +637,7 @@ public
 			System.out.println();
 		}
 		
-		/*String Trial = "som_selstart_dmi_1_merge_som_sendMAreq";
+		String Trial = "som_selstart_dmi_1_merge_som_sendMAreq";
 		
 		String [] Parts = Trial.split("_merge_");
 		for(int i=0; i<Parts.length; i++) {

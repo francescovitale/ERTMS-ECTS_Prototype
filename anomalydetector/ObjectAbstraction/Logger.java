@@ -17,7 +17,7 @@ import ObjectAbstraction.PMLogic.Trace;
 public class Logger {
 	public Logger() {}
 	
-	public void logEvent(String Timestamp, int CaseID, String Resource, String ActInst,Boolean Aw, String ProcessName) throws SQLException {
+	public void logEvent(String Timestamp, int CaseID, String Resource, String ActInst,Boolean Aw, String ProcessName, String Path) throws SQLException {
 		DBFacade DBF = new DBFacade();
 		try {
 			Checker C = new Checker();
@@ -26,7 +26,7 @@ public class Logger {
 			try {
 				switch(ActInst) { // The algorithms checks for the end transitions of known processes.
 				case "som_end":
-					ReturnedTraces = C.onlineConformanceChecking(Aw);
+					ReturnedTraces = C.onlineConformanceChecking(Aw, Path);
 					break;
 				default:
 					System.out.println("The activity isn't the end transition");

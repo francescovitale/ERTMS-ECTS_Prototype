@@ -22,7 +22,10 @@ public class LoggingServlet extends HttpServlet {
 		Message msg = deserializeMessage(postString);
 		System.out.println(msg.isAware());
 		System.out.println("Request received");
-		AnomalyDetectorController.getInstance().logEvent(msg, "StartOfMission");
+		//String Path = this.getServletContext().getRealPath("");
+		String Path = "C:\\Program Files\\Apache Software Foundation\\Tomcat 8.5\\webapps\\ad";
+		System.out.println(Path);
+		AnomalyDetectorController.getInstance().logEvent(msg, "StartOfMission", Path);
 		
 	}
 	public void doGet(HttpServletRequest request,HttpServletResponse response) throws ServletException, IOException{
