@@ -1,0 +1,82 @@
+Behavior 1:
+
+The EVC has a stored level >= 2
+
+Behavior 2:
+
+The EVC has a stored level >= 2, but the RBC is initially unavailable (2 retries) 
+
+Behavior 3:
+
+The EVC has a stored level < 2
+
+Behavior 4:
+
+The EVC has a stored level >= 2, the sensor does not work, but the driver continues the use-case (fail-stop behavior for the sensor)
+
+Behavior 5:
+
+The EVC has a stored level >= 2, the sensor does work, but the connection with the RBC is lost when the RBC routine is started (fail-stop behavior for the RBC)
+
+Behavior 6:
+
+The EVC has a stored level >= 2, the sensor does not work, and the connection with the RBC is lost when the RBC routine is started (fail-stop behavior for both the RBC and the sensor)
+
+Behavior 7:
+
+The EVC has a stored level >= 2, but the RBC is corrupted in all the interested phases, namely phases:
+
+- Contacting the RBC
+
+- Performing the RBC routine
+
+- Select the Mode
+
+- Start procedure
+
+(byzantine behavior for the RBC)
+
+Behavior 8:
+
+The EVC is corrupted in all the interested phases, namely phases:
+
+- Inserting the Driver ID
+
+- Validating the level
+
+- Contacting the RBC
+
+- Performing the RBC routine
+
+- Select the Mode
+
+- Start procedure
+
+- Acknowledgement
+
+(byzantine behavior for the EVC)
+
+Behavior 9:
+
+The EVC has a level >= 2, but the RBC is corrupted in the phase:
+
+- Performing the RBC routine
+
+(byzantine behavior for the RBC)
+
+Behavior 10:
+
+The EVC has a level >= 2, but it is corrupted in phases:
+
+- Start procedure
+
+- Acknowledgement
+
+Also, the RBC is corrupted in the phase:
+
+- Performing the RBC routine
+
+(byzantine behavior for both the EVC and the RBC)
+
+
+
